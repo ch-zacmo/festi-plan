@@ -15,9 +15,9 @@ const MONGO_PASSWORD = process.env.MONGO_PASSWORD || 'password';
 
 app.use(express.json());
 
-app.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
-});
+// app.listen(PORT, () => {
+//     console.log(`Server running on port ${PORT}`);
+// });
 
 /**
  * @description Setting up the logger for the application.
