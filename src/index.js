@@ -4,7 +4,10 @@ const app = express();
 const mongoose = require('mongoose');
 const path = require('path');
 var logger = require('morgan');
-
+const fs = require('fs');
+const https = require('https');
+const SSL_CERT_PATH = process.env.SSL_CERT_PATH;
+const SSL_KEY_PATH = process.env.SSL_KEY_PATH;
 const PORT = process.env.PORT || 5000;
 const MONGO_URI = process.env.MONGO_URI || 'mongodb://localhost:27017';
 const MONGO_USER = process.env.MONGO_USER || 'user';
@@ -34,13 +37,40 @@ app.use(express.urlencoded({
 app.use(express.static(path.join(__dirname, '../public')));
 
 
+
+function startServer() {
+    if (SSL_CERT_PATH && SSL_KEY_PATH) {
+        try {
+            const cert = fs.readFileSync(SSL_CERT_PATH);
+            const key = fs.readFileSync(SSL_KEY_PATH);
+            https.createServer({ key, cert }, app).listen(PORT, () => {
+                console.log(`HTTPS server running on port ${PORT}`);
+            });
+        } catch (err) {
+            console.error('Failed to start HTTPS server:', err);
+            app.listen(PORT, () => {
+                console.log(`Fallback to HTTP server on port ${PORT}`);
+            });
+        }
+    } else {
+        app.listen(PORT, () => {
+            console.log(`Server running on port ${PORT}`);
+        });
+    }
+}
+
 mongoose.connect(MONGO_URI, {
     dbName: 'planning',
     user: MONGO_USER,
     pass: MONGO_PASSWORD
-})
-    .then(() => console.log('MongoDB connected'))
-    .catch(err => console.error(err));
+}).then(() => {
+    console.log('MongoDB connected');
+    startServer();
+}).catch(err => {
+    console.error(err);
+    // Start server anyway if MongoDB fails (optional)
+    startServer();
+});
 
 
 const bcrypt = require('bcryptjs');
