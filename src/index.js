@@ -166,6 +166,32 @@ function startServer() {
     server.on('listening', onListening.bind(null, server));
 }
 
+function onError(error) {
+    if (error.syscall !== 'listen') {
+        throw error;
+    }
+    const bind = typeof PORT === 'string' ? 'Pipe ' + PORT : 'Port ' + PORT;
+    // handle specific listen errors with friendly messages
+    switch (error.code) {
+        case 'EACCES':
+            console.error(bind + ' requires elevated privileges');
+            process.exit(1);
+            break;
+        case 'EADDRINUSE':
+            console.error(bind + ' is already in use');
+            process.exit(1);
+            break;
+        default:
+            throw error;
+    }
+}
+
+function onListening(server) {
+    const addr = server.address();
+    const bind = typeof addr === 'string' ? 'pipe ' + addr : 'port ' + addr.port;
+    console.log('Listening on ' + bind);
+}
+
 mongoose.connect(MONGO_URI, {
     dbName: 'planning',
     user: MONGO_USER,
@@ -175,6 +201,4 @@ mongoose.connect(MONGO_URI, {
     startServer();
 }).catch(err => {
     console.error(err);
-    // Start server anyway if MongoDB fails (optional)
-    startServer();
 });
